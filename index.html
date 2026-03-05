@@ -1,0 +1,1554 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VOID WAR — リアルタイム宇宙戦略</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+  :root {
+    --void: #000408;
+    --deep: #020c18;
+    --panel: #040f1e;
+    --border: #0a2540;
+    --accent-a: #00e5ff;
+    --accent-b: #ff3a3a;
+    --accent-c: #ffd700;
+    --text: #8ab4c8;
+    --text-bright: #c8e8f8;
+    --glow-a: 0 0 8px #00e5ff88, 0 0 20px #00e5ff22;
+    --glow-b: 0 0 8px #ff3a3a88, 0 0 20px #ff3a3a22;
+    --glow-c: 0 0 8px #ffd70088, 0 0 20px #ffd70022;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--void);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    user-select: none;
+  }
+
+  /* ===== HEADER ===== */
+  #header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    z-index: 100;
+    flex-shrink: 0;
+  }
+
+  #header h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 16px;
+    font-weight: 900;
+    letter-spacing: 6px;
+    color: var(--accent-a);
+    text-shadow: var(--glow-a);
+  }
+
+  #clock-bar {
+    display: flex; gap: 20px; font-size: 11px; color: var(--text);
+  }
+  #clock-bar span { color: var(--text-bright); }
+
+  #team-badges { display: flex; gap: 8px; }
+  .team-badge {
+    padding: 3px 10px; border-radius: 2px; font-size: 10px;
+    font-family: 'Orbitron', sans-serif; letter-spacing: 2px;
+  }
+  .team-badge.alpha { border: 1px solid var(--accent-a); color: var(--accent-a); box-shadow: var(--glow-a); }
+  .team-badge.beta  { border: 1px solid var(--accent-b); color: var(--accent-b); box-shadow: var(--glow-b); }
+
+  /* ===== MAIN LAYOUT ===== */
+  #main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ===== LEFT PANEL ===== */
+  #left-panel {
+    width: 220px;
+    border-right: 1px solid var(--border);
+    background: var(--panel);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+
+  .panel-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--text);
+    padding: 8px 12px 6px;
+    border-bottom: 1px solid var(--border);
+    text-transform: uppercase;
+  }
+
+  #player-setup {
+    padding: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .input-group { margin-bottom: 8px; }
+  .input-group label { font-size: 9px; color: var(--text); letter-spacing: 1px; display: block; margin-bottom: 3px; }
+  .input-group input, .input-group select {
+    width: 100%; background: var(--deep); border: 1px solid var(--border);
+    color: var(--text-bright); padding: 4px 8px; font-family: 'Share Tech Mono', monospace;
+    font-size: 11px; outline: none;
+    transition: border-color 0.2s;
+  }
+  .input-group input:focus, .input-group select:focus {
+    border-color: var(--accent-a); box-shadow: var(--glow-a);
+  }
+
+  .btn {
+    width: 100%; padding: 6px; font-family: 'Orbitron', sans-serif;
+    font-size: 9px; letter-spacing: 2px; cursor: pointer;
+    border: none; transition: all 0.2s; text-transform: uppercase;
+  }
+  .btn-primary {
+    background: var(--accent-a); color: var(--void);
+    box-shadow: var(--glow-a);
+  }
+  .btn-primary:hover { filter: brightness(1.3); }
+  .btn-danger {
+    background: transparent; color: var(--accent-b);
+    border: 1px solid var(--accent-b);
+    box-shadow: var(--glow-b);
+  }
+  .btn-danger:hover { background: var(--accent-b); color: var(--void); }
+  .btn-gold {
+    background: transparent; color: var(--accent-c);
+    border: 1px solid var(--accent-c);
+    box-shadow: var(--glow-c);
+  }
+  .btn-gold:hover { background: var(--accent-c); color: var(--void); }
+
+  #ship-stats {
+    padding: 10px;
+    border-bottom: 1px solid var(--border);
+    font-size: 10px;
+    line-height: 1.8;
+  }
+  .stat-row { display: flex; justify-content: space-between; }
+  .stat-label { color: var(--text); }
+  .stat-val { color: var(--text-bright); }
+  .stat-val.alpha { color: var(--accent-a); }
+  .stat-val.beta  { color: var(--accent-b); }
+
+  #hp-bar-wrap { margin: 6px 0 2px; }
+  #hp-bar-bg { background: var(--border); height: 6px; border-radius: 1px; }
+  #hp-bar { height: 6px; border-radius: 1px; transition: width 0.5s; background: var(--accent-a); }
+
+  #command-panel {
+    padding: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  #cmd-input {
+    width: 100%; background: var(--deep); border: 1px solid var(--border);
+    color: var(--text-bright); padding: 4px 8px; font-family: 'Share Tech Mono', monospace;
+    font-size: 11px; outline: none; margin-bottom: 6px;
+  }
+  #cmd-input:focus { border-color: var(--accent-c); box-shadow: var(--glow-c); }
+
+  #cmd-log {
+    flex: 1; overflow-y: auto; padding: 8px 10px; font-size: 10px;
+    line-height: 1.7;
+  }
+  #cmd-log::-webkit-scrollbar { width: 3px; }
+  #cmd-log::-webkit-scrollbar-thumb { background: var(--border); }
+  .log-entry { border-bottom: 1px solid #0a1a2a; padding: 2px 0; }
+  .log-entry.alpha { color: var(--accent-a); }
+  .log-entry.beta  { color: var(--accent-b); }
+  .log-entry.sys   { color: var(--accent-c); }
+  .log-entry.warn  { color: #ff8800; }
+
+  #waypoint-list {
+    padding: 8px 10px;
+    font-size: 10px;
+    max-height: 100px;
+    overflow-y: auto;
+    border-top: 1px solid var(--border);
+  }
+  .wp-item {
+    display: flex; justify-content: space-between;
+    border-bottom: 1px solid #0a1a2a; padding: 2px 0;
+  }
+  .wp-num { color: var(--accent-c); }
+  .wp-coord { color: var(--text); }
+  .wp-del { cursor: pointer; color: var(--accent-b); padding: 0 4px; }
+  .wp-del:hover { text-shadow: var(--glow-b); }
+
+  /* ===== CANVAS AREA ===== */
+  #canvas-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+
+  #space-canvas { display: block; }
+
+  #coords-display {
+    position: absolute; bottom: 10px; left: 10px;
+    font-size: 10px; color: var(--text);
+    background: rgba(2,12,24,0.7);
+    padding: 4px 8px; border: 1px solid var(--border);
+    pointer-events: none;
+  }
+
+  #zoom-controls {
+    position: absolute; bottom: 10px; right: 10px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .zoom-btn {
+    width: 28px; height: 28px; background: var(--panel);
+    border: 1px solid var(--border); color: var(--text-bright);
+    cursor: pointer; font-size: 16px; display: flex;
+    align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .zoom-btn:hover { border-color: var(--accent-a); color: var(--accent-a); }
+
+  #mode-display {
+    position: absolute; top: 10px; left: 10px;
+    font-family: 'Orbitron', sans-serif; font-size: 9px;
+    letter-spacing: 2px; color: var(--accent-c);
+    text-shadow: var(--glow-c);
+    background: rgba(2,12,24,0.8);
+    padding: 4px 10px; border: 1px solid #2a1a00;
+  }
+
+  /* ===== RIGHT PANEL ===== */
+  #right-panel {
+    width: 200px;
+    border-left: 1px solid var(--border);
+    background: var(--panel);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+
+  #players-list {
+    overflow-y: auto; flex: 1;
+    padding: 6px;
+  }
+  #players-list::-webkit-scrollbar { width: 3px; }
+  #players-list::-webkit-scrollbar-thumb { background: var(--border); }
+
+  .player-card {
+    border: 1px solid var(--border);
+    margin-bottom: 6px; padding: 6px 8px;
+    font-size: 10px; transition: border-color 0.3s;
+  }
+  .player-card.alpha { border-left: 2px solid var(--accent-a); }
+  .player-card.beta  { border-left: 2px solid var(--accent-b); }
+  .player-card.me    { background: rgba(0,229,255,0.04); }
+  .pc-name { color: var(--text-bright); font-size: 11px; margin-bottom: 2px; }
+  .pc-ship { color: var(--text); font-size: 9px; }
+  .pc-hp { margin-top: 4px; }
+  .pc-hp-bar { height: 3px; border-radius: 1px; margin-top: 2px; transition: width 0.5s; }
+  .pc-hp-bar.alpha { background: var(--accent-a); }
+  .pc-hp-bar.beta  { background: var(--accent-b); }
+
+  #objectives-panel {
+    border-top: 1px solid var(--border);
+    padding: 8px 10px;
+    font-size: 10px;
+  }
+  .obj-row { margin-bottom: 4px; }
+  .obj-label { color: var(--text); font-size: 9px; }
+  .obj-val { color: var(--accent-c); }
+
+  /* ===== MODAL ===== */
+  #modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.85); z-index: 1000;
+    align-items: center; justify-content: center;
+  }
+  #modal-overlay.show { display: flex; }
+  #modal-box {
+    background: var(--panel); border: 1px solid var(--accent-a);
+    box-shadow: var(--glow-a), 0 0 60px #00e5ff11;
+    padding: 30px; min-width: 320px; max-width: 440px;
+    text-align: center;
+  }
+  #modal-box h2 {
+    font-family: 'Orbitron', sans-serif; font-size: 20px;
+    color: var(--accent-a); letter-spacing: 4px;
+    text-shadow: var(--glow-a); margin-bottom: 16px;
+  }
+  #modal-box p { font-size: 13px; color: var(--text); margin-bottom: 8px; line-height: 1.7; }
+  #modal-box .help-section { margin-top: 12px; text-align: left; }
+  #modal-box .help-section h3 {
+    font-family: 'Orbitron', sans-serif; font-size: 10px;
+    color: var(--accent-c); letter-spacing: 2px; margin-bottom: 6px;
+  }
+  #modal-box .help-row {
+    display: flex; justify-content: space-between; font-size: 10px;
+    border-bottom: 1px solid var(--border); padding: 3px 0;
+  }
+  #modal-box .help-cmd { color: var(--accent-a); }
+  #modal-box .help-desc { color: var(--text); }
+  #modal-box .modal-btns { display: flex; gap: 8px; margin-top: 16px; }
+
+  /* ===== NOTIFICATION ===== */
+  #notification {
+    position: fixed; top: 50px; left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: var(--panel); border: 1px solid var(--accent-c);
+    box-shadow: var(--glow-c); padding: 8px 20px;
+    font-family: 'Orbitron', sans-serif; font-size: 11px;
+    letter-spacing: 2px; color: var(--accent-c);
+    opacity: 0; transition: all 0.4s; pointer-events: none;
+    z-index: 500;
+  }
+  #notification.show {
+    opacity: 1; transform: translateX(-50%) translateY(0);
+  }
+
+  /* ===== VICTORY ===== */
+  #victory-screen {
+    display: none; position: fixed; inset: 0;
+    z-index: 2000; align-items: center; justify-content: center;
+    flex-direction: column; background: rgba(0,0,0,0.9);
+  }
+  #victory-screen.show { display: flex; }
+  #victory-title {
+    font-family: 'Orbitron', sans-serif; font-size: 48px;
+    font-weight: 900; letter-spacing: 8px;
+    animation: pulseWin 1.5s ease-in-out infinite;
+  }
+  #victory-title.alpha { color: var(--accent-a); text-shadow: var(--glow-a), 0 0 60px #00e5ff66; }
+  #victory-title.beta  { color: var(--accent-b); text-shadow: var(--glow-b), 0 0 60px #ff3a3a66; }
+  #victory-sub { font-size: 14px; color: var(--text); letter-spacing: 4px; margin-top: 16px; }
+  @keyframes pulseWin {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.5); }
+  }
+  #restart-btn {
+    margin-top: 30px; padding: 10px 30px;
+    font-family: 'Orbitron', sans-serif; font-size: 12px;
+    letter-spacing: 3px; cursor: pointer;
+    background: transparent; color: var(--text-bright);
+    border: 1px solid var(--border);
+    transition: all 0.3s;
+  }
+  #restart-btn:hover { border-color: var(--accent-a); color: var(--accent-a); }
+
+  /* ===== Scanline effect ===== */
+  body::after {
+    content: ''; position: fixed; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent, transparent 2px,
+      rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 4px
+    );
+    z-index: 9999;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="header">
+  <h1>✦ VOID WAR</h1>
+  <div id="clock-bar">
+    <div>ELAPSED: <span id="elapsed-time">00:00:00</span></div>
+    <div>CYCLE: <span id="game-cycle">1</span></div>
+    <div>SPEED: <span id="time-scale">1×</span></div>
+  </div>
+  <div id="team-badges">
+    <div class="team-badge alpha">ALPHA <span id="alpha-count">0</span></div>
+    <div class="team-badge beta">BETA <span id="beta-count">0</span></div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- LEFT PANEL -->
+  <div id="left-panel">
+    <div class="panel-title">◈ COMMAND BRIDGE</div>
+
+    <div id="player-setup">
+      <div class="input-group">
+        <label>CALLSIGN</label>
+        <input type="text" id="callsign-input" placeholder="e.g. VEGA-7" maxlength="12">
+      </div>
+      <button class="btn btn-primary" id="join-btn">DEPLOY SHIP</button>
+    </div>
+
+    <div id="ship-stats">
+      <div class="panel-title" style="padding:0 0 6px; border:none; margin-bottom:4px;">◈ SHIP STATUS</div>
+      <div class="stat-row"><span class="stat-label">TEAM</span><span class="stat-val" id="my-team-disp">—</span></div>
+      <div class="stat-row"><span class="stat-label">POS</span><span class="stat-val" id="my-pos-disp">—</span></div>
+      <div class="stat-row"><span class="stat-label">SPEED</span><span class="stat-val" id="my-speed-disp">—</span></div>
+      <div class="stat-row"><span class="stat-label">MISSILES</span><span class="stat-val" id="my-missiles-disp">∞</span></div>
+      <div id="hp-bar-wrap">
+        <div class="stat-row"><span class="stat-label">HULL</span><span class="stat-val" id="my-hp-disp">100%</span></div>
+        <div id="hp-bar-bg"><div id="hp-bar" style="width:100%"></div></div>
+      </div>
+    </div>
+
+    <div id="command-panel">
+      <div class="panel-title" style="padding:0 0 6px; border:none; margin-bottom:6px;">◈ TERMINAL</div>
+      <input type="text" id="cmd-input" placeholder="> type command..." autocomplete="off">
+      <button class="btn btn-gold" style="margin-bottom:4px" id="help-btn">HELP / COMMANDS</button>
+    </div>
+
+    <div class="panel-title">◈ WAYPOINTS</div>
+    <div id="waypoint-list"></div>
+
+    <div id="cmd-log"></div>
+  </div>
+
+  <!-- CANVAS -->
+  <div id="canvas-wrap">
+    <canvas id="space-canvas"></canvas>
+    <div id="coords-display">X: — Y: —</div>
+    <div id="mode-display" id="mode-display">MODE: NAVIGATE</div>
+    <div id="zoom-controls">
+      <button class="zoom-btn" id="zoom-in-btn">+</button>
+      <button class="zoom-btn" id="zoom-out-btn">−</button>
+      <button class="zoom-btn" id="zoom-reset-btn" style="font-size:9px;font-family:'Orbitron',sans-serif;">FIT</button>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div id="right-panel">
+    <div class="panel-title">◈ ALL SHIPS</div>
+    <div id="players-list"></div>
+    <div id="objectives-panel">
+      <div class="panel-title" style="padding:0 0 6px; border:none; margin-bottom:4px;">◈ OBJECTIVES</div>
+      <div class="obj-row"><span class="obj-label">TARGET ZONE</span><br><span class="obj-val" id="obj-coords">( — , — )</span></div>
+      <div class="obj-row" style="margin-top:6px"><span class="obj-label">α NEAREST</span><br><span class="obj-val" id="alpha-dist">—</span></div>
+      <div class="obj-row"><span class="obj-label">β NEAREST</span><br><span class="obj-val" id="beta-dist">—</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFICATION -->
+<div id="notification"></div>
+
+<!-- HELP MODAL -->
+<div id="modal-overlay">
+  <div id="modal-box">
+    <h2>VOID WAR</h2>
+    <p>宇宙空間でチームに分かれて目標座標を争う<br>超低速リアルタイム宇宙戦略ゲーム</p>
+    <div class="help-section">
+      <h3>▸ TERMINAL COMMANDS</h3>
+      <div class="help-row"><span class="help-cmd">wp X Y</span><span class="help-desc">ウェイポイント追加</span></div>
+      <div class="help-row"><span class="help-cmd">clrwp</span><span class="help-desc">ウェイポイントクリア</span></div>
+      <div class="help-row"><span class="help-cmd">fire X Y</span><span class="help-desc">座標にミサイル発射</span></div>
+      <div class="help-row"><span class="help-cmd">asteroid X Y</span><span class="help-desc">小惑星を配置（防衛）</span></div>
+      <div class="help-row"><span class="help-cmd">scan</span><span class="help-desc">周辺スキャン</span></div>
+      <div class="help-row"><span class="help-cmd">speed N</span><span class="help-desc">ゲーム速度変更(1-100)</span></div>
+      <div class="help-row"><span class="help-cmd">status</span><span class="help-desc">艦船ステータス</span></div>
+      <div class="help-row"><span class="help-cmd">help</span><span class="help-desc">このヘルプ表示</span></div>
+    </div>
+    <div class="help-section">
+      <h3>▸ MAP CONTROLS</h3>
+      <div class="help-row"><span class="help-cmd">左クリック</span><span class="help-desc">ウェイポイント追加</span></div>
+      <div class="help-row"><span class="help-cmd">右クリック</span><span class="help-desc">ミサイル発射モード切替</span></div>
+      <div class="help-row"><span class="help-cmd">ドラッグ</span><span class="help-desc">マップ移動</span></div>
+      <div class="help-row"><span class="help-cmd">ホイール</span><span class="help-desc">ズーム</span></div>
+      <div class="help-row"><span class="help-cmd">中クリック</span><span class="help-desc">小惑星配置</span></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-primary" id="modal-close-btn" style="flex:1">UNDERSTOOD</button>
+      <button class="btn btn-danger" id="modal-reset-btn" style="flex:1">RESET GAME</button>
+    </div>
+  </div>
+</div>
+
+<!-- VICTORY SCREEN -->
+<div id="victory-screen">
+  <div id="victory-title">— VICTORY —</div>
+  <div id="victory-sub">TEAM ??? HAS REACHED THE OBJECTIVE</div>
+  <button id="restart-btn">▸ NEW GAME</button>
+</div>
+
+<script>
+// ============================================================
+//  VOID WAR — Standalone Multi-Tab Space Strategy Game
+//  Uses BroadcastChannel for same-browser multi-tab sync
+// ============================================================
+
+const WORLD_W = 4000, WORLD_H = 4000;
+const TARGET_ZONE = { x: 2000, y: 500, radius: 80 };
+const SHIP_SPEED = 4; // px per game tick (base)
+const MISSILE_SPEED = 14;
+const MISSILE_DAMAGE = 35;
+const ASTEROID_RADIUS = 28;
+const TICK_MS = 1; // real-time interval
+const CAPTURE_TICKS = 60; // ticks in zone before win
+
+// ---- BroadcastChannel shared state ---
+const BC = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('void_war_v1') : null;
+const STORAGE_KEY = 'void_war_state';
+
+// ---- Local Player ID ----
+let myId = sessionStorage.getItem('void_war_pid') || ('P' + Math.random().toString(36).slice(2,8).toUpperCase());
+sessionStorage.setItem('void_war_pid', myId);
+
+// ============================================================
+//  GAME STATE
+// ============================================================
+let G = null; // shared game state
+let myPlayer = null;
+let mouseMode = 'waypoint'; // 'waypoint' | 'missile'
+let gameStarted = false;
+let gameStartTime = null;
+let gameLoop = null;
+let timeScale = 1;
+let captureCounters = { alpha: 0, beta: 0 };
+
+// Canvas / Viewport
+const canvas = document.getElementById('space-canvas');
+const ctx = canvas.getContext('2d');
+let vx = 0, vy = 0, zoom = 1;
+let dragging = false, dragStart = null, dragOrigin = null;
+let mouseWorld = { x: 0, y: 0 };
+let stars = [];
+
+// ============================================================
+//  STATE HELPERS
+// ============================================================
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e){}
+  return null;
+}
+
+function saveState() {
+  if (!G) return;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(G));
+}
+
+function broadcastState() {
+  if (!G) return;
+  if (BC) BC.postMessage({ type: 'state', G });
+  saveState();
+}
+
+function initFreshState() {
+  G = {
+    players: {},
+    missiles: [],
+    asteroids: generateAsteroids(),
+    particles: [],
+    version: Date.now(),
+    startTime: Date.now(),
+    timeScale: 1,
+    victory: null,
+    captureCounters: { alpha: 0, beta: 0 }
+  };
+}
+
+function generateAsteroids() {
+  const arr = [];
+  const count = 40;
+  for (let i = 0; i < count; i++) {
+    let x, y, ok;
+    for (let t = 0; t < 20; t++) {
+      x = 200 + Math.random() * (WORLD_W - 400);
+      y = 200 + Math.random() * (WORLD_H - 400);
+      const dx = x - TARGET_ZONE.x, dy = y - TARGET_ZONE.y;
+      if (Math.sqrt(dx*dx+dy*dy) > 200) { ok = true; break; }
+    }
+    arr.push({
+      id: 'ast' + i, x, y,
+      radius: 18 + Math.random() * 20,
+      mass: 0.5 + Math.random(),
+      angle: Math.random() * Math.PI * 2,
+      placed: false
+    });
+  }
+  return arr;
+}
+
+// ============================================================
+//  STARS
+// ============================================================
+function initStars() {
+  stars = [];
+  for (let i = 0; i < 400; i++) {
+    stars.push({
+      x: Math.random() * WORLD_W,
+      y: Math.random() * WORLD_H,
+      r: Math.random() * 1.5,
+      bright: Math.random()
+    });
+  }
+}
+
+// ============================================================
+//  PLAYER JOIN
+// ============================================================
+function joinGame() {
+  const callsign = document.getElementById('callsign-input').value.trim().toUpperCase() || ('SHIP-' + myId.slice(-4));
+
+  if (!G) {
+    const saved = loadState();
+    if (saved && (Date.now() - saved.startTime < 7 * 24 * 3600 * 1000)) {
+      G = saved;
+    } else {
+      initFreshState();
+    }
+  }
+
+  // Assign team
+  let alphaCount = 0, betaCount = 0;
+  Object.values(G.players).forEach(p => {
+    if (p.team === 'alpha') alphaCount++;
+    else betaCount++;
+  });
+  const team = alphaCount <= betaCount ? 'alpha' : 'beta';
+
+  const spawnY = team === 'alpha' ? WORLD_H - 300 : 300;
+  const spawnX = WORLD_W / 2 + (Math.random() - 0.5) * 600;
+
+  G.players[myId] = {
+    id: myId,
+    callsign,
+    team,
+    x: spawnX,
+    y: spawnY,
+    angle: team === 'alpha' ? -Math.PI/2 : Math.PI/2,
+    speed: SHIP_SPEED,
+    hp: 100,
+    maxHp: 100,
+    waypoints: [],
+    missiles_fired: 0,
+    alive: true,
+    lastSeen: Date.now()
+  };
+
+  myPlayer = G.players[myId];
+  gameStarted = true;
+
+  document.getElementById('join-btn').disabled = true;
+  document.getElementById('callsign-input').disabled = true;
+
+  centerOn(myPlayer.x, myPlayer.y);
+  broadcastState();
+  log(`[SYS] ${callsign} deployed — TEAM ${team.toUpperCase()}`, 'sys');
+  log(`[SYS] 目標座標: (${TARGET_ZONE.x}, ${TARGET_ZONE.y})`, 'sys');
+  notify(`TEAM ${team.toUpperCase()} — DEPLOYED`);
+
+  if (!gameLoop) startLoop();
+}
+
+// ============================================================
+//  GAME LOOP
+// ============================================================
+function startLoop() {
+  gameLoop = setInterval(tick, TICK_MS);
+}
+
+function tick() {
+  if (!G) return;
+  timeScale = G.timeScale || 1;
+
+  // Move ships
+  Object.values(G.players).forEach(p => {
+    if (!p.alive || !p.waypoints || p.waypoints.length === 0) return;
+    const wp = p.waypoints[0];
+    const dx = wp.x - p.x, dy = wp.y - p.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const step = p.speed * timeScale;
+    if (dist <= step) {
+      p.x = wp.x; p.y = wp.y;
+      p.waypoints.shift();
+    } else {
+      p.angle = Math.atan2(dy, dx);
+      p.x += (dx/dist) * step;
+      p.y += (dy/dist) * step;
+    }
+    p.x = Math.max(10, Math.min(WORLD_W - 10, p.x));
+    p.y = Math.max(10, Math.min(WORLD_H - 10, p.y));
+  });
+
+  // Move missiles
+  G.missiles = G.missiles.filter(m => {
+    const dx = m.tx - m.x, dy = m.ty - m.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const step = MISSILE_SPEED * timeScale;
+    if (dist <= step) {
+      explode(m.tx, m.ty, m.owner_team);
+      return false;
+    }
+    m.angle = Math.atan2(dy, dx);
+    m.x += (dx/dist) * step;
+    m.y += (dy/dist) * step;
+
+    // Check asteroid intercept
+    for (const ast of G.asteroids) {
+      const adx = m.x - ast.x, ady = m.y - ast.y;
+      if (Math.sqrt(adx*adx+ady*ady) < ast.radius + 5) {
+        spawnParticles(m.x, m.y, '#ff8800', 8);
+        log(`[SYS] ミサイル迎撃！小惑星に衝突`, 'warn');
+        return false;
+      }
+    }
+    return true;
+  });
+
+  // Update particles
+  G.particles = G.particles.filter(p => {
+    p.x += p.vx * timeScale;
+    p.y += p.vy * timeScale;
+    p.life -= timeScale;
+    return p.life > 0;
+  });
+
+  // Check capture
+  if (!G.victory) {
+    ['alpha','beta'].forEach(team => {
+      const inZone = Object.values(G.players).some(p =>
+        p.alive && p.team === team &&
+        Math.sqrt((p.x-TARGET_ZONE.x)**2+(p.y-TARGET_ZONE.y)**2) < TARGET_ZONE.radius
+      );
+      if (inZone) {
+        G.captureCounters[team] = (G.captureCounters[team] || 0) + 1;
+        if (G.captureCounters[team] >= CAPTURE_TICKS) {
+          G.victory = team;
+          showVictory(team);
+        }
+      } else {
+        G.captureCounters[team] = Math.max(0, (G.captureCounters[team]||0) - 0.5);
+      }
+    });
+  }
+
+  // Update elapsed
+  updateHUD();
+  renderFrame();
+
+  if (myPlayer && myPlayer.id === myId) {
+    G.players[myId].lastSeen = Date.now();
+  }
+
+  // Broadcast every 3 ticks
+  if (Date.now() % 150 < TICK_MS) {
+    broadcastState();
+  }
+}
+
+function explode(x, y, team) {
+  spawnParticles(x, y, team === 'alpha' ? '#00e5ff' : '#ff3a3a', 20);
+  // Damage ships in blast radius
+  const blastR = 80;
+  Object.values(G.players).forEach(p => {
+    if (!p.alive) return;
+    const dx = p.x - x, dy = p.y - y;
+    if (Math.sqrt(dx*dx+dy*dy) < blastR) {
+      p.hp = Math.max(0, p.hp - MISSILE_DAMAGE);
+      if (p.hp <= 0) {
+        p.alive = false;
+        log(`[KILL] ${p.callsign} 撃沈`, p.team === 'alpha' ? 'alpha' : 'beta');
+        spawnParticles(p.x, p.y, p.team === 'alpha' ? '#00e5ff' : '#ff3a3a', 40);
+      } else {
+        log(`[HIT] ${p.callsign} HP: ${p.hp}%`, 'warn');
+      }
+    }
+  });
+}
+
+function spawnParticles(x, y, color, count) {
+  if (!G) return;
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 1 + Math.random() * 4;
+    G.particles.push({
+      x, y, color,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 30 + Math.random() * 30,
+      maxLife: 60,
+      size: 1 + Math.random() * 3
+    });
+  }
+}
+
+// ============================================================
+//  RENDERING
+// ============================================================
+function renderFrame() {
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  ctx.save();
+  ctx.translate(-vx * zoom + W/2, -vy * zoom + H/2);
+  ctx.scale(zoom, zoom);
+
+  drawBackground();
+  drawGrid();
+  drawTargetZone();
+  drawAsteroids();
+  drawParticles();
+  drawMissiles();
+  drawShips();
+  drawWaypoints();
+  drawCaptureBars();
+
+  ctx.restore();
+}
+
+function worldToScreen(wx, wy) {
+  const W = canvas.width, H = canvas.height;
+  return {
+    sx: (wx - vx) * zoom + W/2,
+    sy: (wy - vy) * zoom + H/2
+  };
+}
+
+function screenToWorld(sx, sy) {
+  const W = canvas.width, H = canvas.height;
+  return {
+    x: (sx - W/2) / zoom + vx,
+    y: (sy - H/2) / zoom + vy
+  };
+}
+
+function drawBackground() {
+  // Deep space gradient
+  const grad = ctx.createRadialGradient(WORLD_W/2, WORLD_H/2, 0, WORLD_W/2, WORLD_H/2, WORLD_W*0.8);
+  grad.addColorStop(0, '#020c18');
+  grad.addColorStop(1, '#000204');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, WORLD_W, WORLD_H);
+
+  // Stars
+  stars.forEach(s => {
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(180,210,255,${0.3 + s.bright * 0.7})`;
+    ctx.fill();
+  });
+}
+
+function drawGrid() {
+  const step = 200;
+  ctx.strokeStyle = 'rgba(10,37,64,0.5)';
+  ctx.lineWidth = 0.5;
+  for (let x = 0; x <= WORLD_W; x += step) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, WORLD_H); ctx.stroke();
+  }
+  for (let y = 0; y <= WORLD_H; y += step) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(WORLD_W, y); ctx.stroke();
+  }
+  // Labels
+  ctx.fillStyle = 'rgba(10,37,64,0.9)';
+  ctx.font = '10px Share Tech Mono';
+  ctx.textAlign = 'left';
+}
+
+function drawTargetZone() {
+  const t = Date.now() / 1000;
+  const pulse = 0.7 + 0.3 * Math.sin(t * 2);
+
+  // Outer ring
+  ctx.beginPath();
+  ctx.arc(TARGET_ZONE.x, TARGET_ZONE.y, TARGET_ZONE.radius, 0, Math.PI*2);
+  ctx.strokeStyle = `rgba(255,215,0,${pulse * 0.8})`;
+  ctx.lineWidth = 2;
+  ctx.setLineDash([8, 4]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Inner fill
+  ctx.beginPath();
+  ctx.arc(TARGET_ZONE.x, TARGET_ZONE.y, TARGET_ZONE.radius, 0, Math.PI*2);
+  ctx.fillStyle = `rgba(255,215,0,${pulse * 0.06})`;
+  ctx.fill();
+
+  // Glow
+  const grd = ctx.createRadialGradient(TARGET_ZONE.x, TARGET_ZONE.y, 0, TARGET_ZONE.x, TARGET_ZONE.y, TARGET_ZONE.radius * 1.5);
+  grd.addColorStop(0, `rgba(255,215,0,${pulse * 0.1})`);
+  grd.addColorStop(1, 'transparent');
+  ctx.fillStyle = grd;
+  ctx.beginPath();
+  ctx.arc(TARGET_ZONE.x, TARGET_ZONE.y, TARGET_ZONE.radius * 1.5, 0, Math.PI*2);
+  ctx.fill();
+
+  // Label
+  ctx.fillStyle = `rgba(255,215,0,${pulse})`;
+  ctx.font = 'bold 12px Orbitron, monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('⬡ OBJECTIVE', TARGET_ZONE.x, TARGET_ZONE.y - TARGET_ZONE.radius - 10);
+
+  // Capture progress arcs
+  ['alpha','beta'].forEach((team, i) => {
+    const progress = (G.captureCounters[team] || 0) / CAPTURE_TICKS;
+    if (progress <= 0) return;
+    const offset = i === 0 ? 0 : Math.PI;
+    ctx.beginPath();
+    ctx.arc(TARGET_ZONE.x, TARGET_ZONE.y, TARGET_ZONE.radius + 8 + i * 6,
+      -Math.PI/2 + offset, -Math.PI/2 + offset + Math.PI * progress * (i === 0 ? 1 : -1));
+    ctx.strokeStyle = team === 'alpha' ? 'rgba(0,229,255,0.9)' : 'rgba(255,58,58,0.9)';
+    ctx.lineWidth = 4;
+    ctx.stroke();
+  });
+}
+
+function drawAsteroids() {
+  if (!G) return;
+  G.asteroids.forEach(ast => {
+    ctx.save();
+    ctx.translate(ast.x, ast.y);
+    ctx.rotate(ast.angle + Date.now() * 0.0001 * ast.mass);
+
+    // Glow
+    const grd = ctx.createRadialGradient(0, 0, 0, 0, 0, ast.radius * 1.5);
+    grd.addColorStop(0, 'rgba(100,70,40,0.3)');
+    grd.addColorStop(1, 'transparent');
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(0, 0, ast.radius * 1.5, 0, Math.PI*2);
+    ctx.fill();
+
+    // Body (polygon)
+    ctx.beginPath();
+    const sides = 7;
+    for (let i = 0; i < sides; i++) {
+      const a = (i / sides) * Math.PI * 2;
+      const r = ast.radius * (0.75 + 0.25 * Math.sin(i * 2.3));
+      if (i === 0) ctx.moveTo(Math.cos(a)*r, Math.sin(a)*r);
+      else ctx.lineTo(Math.cos(a)*r, Math.sin(a)*r);
+    }
+    ctx.closePath();
+    ctx.fillStyle = '#3a2a18';
+    ctx.strokeStyle = '#6a5a3a';
+    ctx.lineWidth = 1.5;
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.restore();
+  });
+}
+
+function drawParticles() {
+  if (!G) return;
+  G.particles.forEach(p => {
+    const alpha = p.life / p.maxLife;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size * alpha, 0, Math.PI*2);
+    ctx.fillStyle = p.color.replace(')', `,${alpha})`).replace('rgb', 'rgba');
+    ctx.fill();
+  });
+}
+
+function drawMissiles() {
+  if (!G) return;
+  G.missiles.forEach(m => {
+    ctx.save();
+    ctx.translate(m.x, m.y);
+    ctx.rotate(m.angle);
+
+    // Trail
+    const trailLen = 25;
+    const grad = ctx.createLinearGradient(-trailLen, 0, 0, 0);
+    grad.addColorStop(0, 'transparent');
+    grad.addColorStop(1, m.team === 'alpha' ? 'rgba(0,229,255,0.8)' : 'rgba(255,58,58,0.8)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(-trailLen, -1.5, trailLen, 3);
+
+    // Body (rectangle)
+    ctx.fillStyle = m.team === 'alpha' ? '#00e5ff' : '#ff3a3a';
+    ctx.fillRect(-2, -2, 14, 4);
+
+    // Glow
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = m.team === 'alpha' ? '#00e5ff' : '#ff3a3a';
+    ctx.fillRect(-2, -2, 14, 4);
+
+    ctx.restore();
+  });
+}
+
+function drawShips() {
+  if (!G) return;
+  Object.values(G.players).forEach(p => {
+    if (!p.alive) {
+      // Wreck
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.globalAlpha = 0.3;
+      ctx.fillStyle = '#333';
+      ctx.beginPath();
+      ctx.arc(0, 0, 12, 0, Math.PI*2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.restore();
+      return;
+    }
+
+    const isMe = p.id === myId;
+    const color = p.team === 'alpha' ? '#00e5ff' : '#ff3a3a';
+    const glowColor = p.team === 'alpha' ? '#00e5ff' : '#ff3a3a';
+
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.angle + Math.PI/2);
+
+    // Selection ring for my ship
+    if (isMe) {
+      ctx.beginPath();
+      ctx.arc(0, 0, 24, 0, Math.PI*2);
+      ctx.strokeStyle = `${color}44`;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4,4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // Engine glow
+    if (p.waypoints && p.waypoints.length > 0) {
+      const engGrad = ctx.createRadialGradient(0, 14, 0, 0, 14, 16);
+      engGrad.addColorStop(0, `${color}aa`);
+      engGrad.addColorStop(1, 'transparent');
+      ctx.fillStyle = engGrad;
+      ctx.beginPath();
+      ctx.arc(0, 14, 16, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    // Ship body — tall triangle
+    ctx.shadowBlur = isMe ? 16 : 8;
+    ctx.shadowColor = glowColor;
+    ctx.beginPath();
+    ctx.moveTo(0, -22);     // nose
+    ctx.lineTo(-10, 12);    // left bottom
+    ctx.lineTo(0, 7);       // center bottom indent
+    ctx.lineTo(10, 12);     // right bottom
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.85;
+    ctx.fill();
+
+    // Center line
+    ctx.globalAlpha = 0.5;
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(0, -22); ctx.lineTo(0, 7);
+    ctx.stroke();
+
+    // Wing accents
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.6;
+    ctx.beginPath();
+    ctx.moveTo(-10, 12); ctx.lineTo(-6, -5);
+    ctx.moveTo(10, 12);  ctx.lineTo(6, -5);
+    ctx.stroke();
+
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur = 0;
+    ctx.restore();
+
+    // Name label
+    ctx.fillStyle = isMe ? '#fff' : color;
+    ctx.font = isMe ? 'bold 10px Orbitron,monospace' : '9px Share Tech Mono,monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(p.callsign, p.x, p.y - 30);
+
+    // HP bar above ship
+    const barW = 36, barH = 3;
+    const hpFrac = p.hp / p.maxHp;
+    ctx.fillStyle = '#0a1a2a';
+    ctx.fillRect(p.x - barW/2, p.y - 26, barW, barH);
+    ctx.fillStyle = hpFrac > 0.5 ? color : (hpFrac > 0.25 ? '#ffd700' : '#ff3a3a');
+    ctx.fillRect(p.x - barW/2, p.y - 26, barW * hpFrac, barH);
+  });
+}
+
+function drawWaypoints() {
+  if (!myPlayer || !myPlayer.waypoints) return;
+  const wps = myPlayer.waypoints;
+  const color = myPlayer.team === 'alpha' ? '#00e5ff' : '#ff3a3a';
+
+  if (wps.length === 0) return;
+
+  // Line from ship to first wp
+  ctx.setLineDash([5, 5]);
+  ctx.strokeStyle = color + '66';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(myPlayer.x, myPlayer.y);
+  wps.forEach(wp => ctx.lineTo(wp.x, wp.y));
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // WP markers
+  wps.forEach((wp, i) => {
+    ctx.beginPath();
+    ctx.arc(wp.x, wp.y, 6, 0, Math.PI*2);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.fillStyle = color + '22';
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.font = '8px Share Tech Mono,monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(i+1, wp.x, wp.y + 3);
+  });
+}
+
+function drawCaptureBars() {
+  if (!G) return;
+  const W = canvas.width, H = canvas.height;
+  // Already handled in drawTargetZone as arcs
+}
+
+// ============================================================
+//  HUD UPDATE
+// ============================================================
+function updateHUD() {
+  if (!G) return;
+  const now = Date.now();
+
+  // Time
+  const elapsed = now - (G.startTime || now);
+  document.getElementById('elapsed-time').textContent = formatDuration(elapsed);
+  document.getElementById('game-cycle').textContent = Math.floor(elapsed / 3600000) + 1;
+  document.getElementById('time-scale').textContent = (G.timeScale || 1) + '×';
+
+  // Team counts
+  let a = 0, b = 0;
+  Object.values(G.players).forEach(p => { if(p.alive) p.team==='alpha'?a++:b++; });
+  document.getElementById('alpha-count').textContent = a;
+  document.getElementById('beta-count').textContent = b;
+
+  if (myPlayer && G.players[myId]) {
+    const mp = G.players[myId];
+    const teamEl = document.getElementById('my-team-disp');
+    teamEl.textContent = mp.team.toUpperCase();
+    teamEl.className = 'stat-val ' + mp.team;
+    document.getElementById('my-pos-disp').textContent = `(${Math.round(mp.x)},${Math.round(mp.y)})`;
+    document.getElementById('my-speed-disp').textContent = (mp.speed * (G.timeScale||1)).toFixed(1) + ' u/t';
+    document.getElementById('my-hp-disp').textContent = mp.hp + '%';
+    const hpBar = document.getElementById('hp-bar');
+    hpBar.style.width = mp.hp + '%';
+    hpBar.style.background = mp.hp > 50 ? (mp.team === 'alpha' ? '#00e5ff' : '#ff3a3a') :
+                              mp.hp > 25 ? '#ffd700' : '#ff3a3a';
+  }
+
+  // Player cards
+  const list = document.getElementById('players-list');
+  list.innerHTML = '';
+  Object.values(G.players).forEach(p => {
+    const card = document.createElement('div');
+    card.className = `player-card ${p.team}${p.id === myId ? ' me' : ''}`;
+    const hpColor = p.hp > 50 ? '' : (p.hp > 25 ? 'style="background:#ffd700"' : 'style="background:#ff3a3a"');
+    card.innerHTML = `
+      <div class="pc-name">${p.id === myId ? '▸ ' : ''}${p.callsign}${!p.alive ? ' [KIA]' : ''}</div>
+      <div class="pc-ship">${p.team.toUpperCase()} · (${Math.round(p.x)},${Math.round(p.y)})</div>
+      <div class="pc-hp">
+        <div style="height:3px;background:#0a1a2a">
+          <div class="pc-hp-bar ${p.team}" ${hpColor} style="width:${p.hp}%"></div>
+        </div>
+      </div>`;
+    list.appendChild(card);
+  });
+
+  // Objectives distance
+  document.getElementById('obj-coords').textContent = `(${TARGET_ZONE.x}, ${TARGET_ZONE.y})`;
+  let aDist = Infinity, bDist = Infinity;
+  Object.values(G.players).forEach(p => {
+    if (!p.alive) return;
+    const d = Math.sqrt((p.x-TARGET_ZONE.x)**2+(p.y-TARGET_ZONE.y)**2);
+    if (p.team === 'alpha' && d < aDist) aDist = d;
+    if (p.team === 'beta' && d < bDist) bDist = d;
+  });
+  document.getElementById('alpha-dist').textContent = aDist < Infinity ? Math.round(aDist) + ' u' : '—';
+  document.getElementById('beta-dist').textContent = bDist < Infinity ? Math.round(bDist) + ' u' : '—';
+
+  // Waypoint list
+  const wpList = document.getElementById('waypoint-list');
+  wpList.innerHTML = '';
+  if (myPlayer && myPlayer.waypoints) {
+    myPlayer.waypoints.forEach((wp, i) => {
+      const div = document.createElement('div');
+      div.className = 'wp-item';
+      div.innerHTML = `<span class="wp-num">WP${i+1}</span><span class="wp-coord">(${Math.round(wp.x)},${Math.round(wp.y)})</span><span class="wp-del" data-idx="${i}">✕</span>`;
+      wpList.appendChild(div);
+    });
+  }
+}
+
+function formatDuration(ms) {
+  const s = Math.floor(ms / 1000);
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (d > 0) return `${d}d ${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
+  return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`;
+}
+
+// ============================================================
+//  COMMANDS
+// ============================================================
+function processCommand(raw) {
+  const parts = raw.trim().split(/\s+/);
+  const cmd = parts[0].toLowerCase();
+  if (!myPlayer) { log('[ERR] まず艦船をデプロイしてください', 'warn'); return; }
+
+  switch(cmd) {
+    case 'wp': {
+      const x = parseFloat(parts[1]), y = parseFloat(parts[2]);
+      if (isNaN(x) || isNaN(y)) { log('[ERR] wp X Y', 'warn'); return; }
+      addWaypoint(x, y);
+      break;
+    }
+    case 'clrwp': {
+      G.players[myId].waypoints = [];
+      log('[NAV] ウェイポイントクリア', myPlayer.team);
+      broadcastState();
+      break;
+    }
+    case 'fire': {
+      const x = parseFloat(parts[1]), y = parseFloat(parts[2]);
+      if (isNaN(x) || isNaN(y)) { log('[ERR] fire X Y', 'warn'); return; }
+      fireMissile(x, y);
+      break;
+    }
+    case 'asteroid': {
+      const x = parseFloat(parts[1]), y = parseFloat(parts[2]);
+      if (isNaN(x) || isNaN(y)) { log('[ERR] asteroid X Y', 'warn'); return; }
+      placeAsteroid(x, y);
+      break;
+    }
+    case 'scan': {
+      scan();
+      break;
+    }
+    case 'speed': {
+      const n = parseFloat(parts[1]);
+      if (isNaN(n) || n < 1 || n > 100) { log('[ERR] speed 1-100', 'warn'); return; }
+      G.timeScale = n;
+      log(`[SYS] タイムスケール: ${n}×`, 'sys');
+      broadcastState();
+      break;
+    }
+    case 'status': {
+      const p = G.players[myId];
+      log(`[STATUS] ${p.callsign} | TEAM:${p.team.toUpperCase()} | HP:${p.hp}% | WP:${p.waypoints.length}`, myPlayer.team);
+      const distObj = Math.round(Math.sqrt((p.x-TARGET_ZONE.x)**2+(p.y-TARGET_ZONE.y)**2));
+      log(`[STATUS] POS:(${Math.round(p.x)},${Math.round(p.y)}) | DIST TO OBJ:${distObj}u`, myPlayer.team);
+      break;
+    }
+    case 'help': {
+      document.getElementById('modal-overlay').classList.add('show');
+      break;
+    }
+    default:
+      log(`[ERR] 不明なコマンド: ${cmd}`, 'warn');
+  }
+}
+
+function addWaypoint(x, y) {
+  x = Math.max(0, Math.min(WORLD_W, x));
+  y = Math.max(0, Math.min(WORLD_H, y));
+  G.players[myId].waypoints.push({x, y});
+  log(`[NAV] WP追加 (${Math.round(x)},${Math.round(y)})`, myPlayer.team);
+  broadcastState();
+}
+
+function fireMissile(tx, ty) {
+  if (!myPlayer.alive) { log('[ERR] 艦船が破壊されています', 'warn'); return; }
+  G.missiles.push({
+    id: 'm' + Date.now(),
+    x: myPlayer.x, y: myPlayer.y,
+    tx, ty,
+    angle: 0,
+    team: myPlayer.team,
+    owner: myId
+  });
+  G.players[myId].missiles_fired = (G.players[myId].missiles_fired || 0) + 1;
+  log(`[FIRE] ミサイル発射 → (${Math.round(tx)},${Math.round(ty)})`, myPlayer.team);
+  notify('MISSILE LAUNCHED');
+  broadcastState();
+}
+
+function placeAsteroid(x, y) {
+  G.asteroids.push({
+    id: 'ast_p' + Date.now(),
+    x, y,
+    radius: ASTEROID_RADIUS,
+    mass: 1,
+    angle: Math.random() * Math.PI * 2,
+    placed: true,
+    owner: myId
+  });
+  log(`[DEF] 小惑星配置 (${Math.round(x)},${Math.round(y)})`, myPlayer.team);
+  broadcastState();
+}
+
+function scan() {
+  const p = G.players[myId];
+  const scanR = 500;
+  let found = [];
+  Object.values(G.players).forEach(other => {
+    if (other.id === myId || !other.alive) return;
+    const d = Math.sqrt((other.x-p.x)**2+(other.y-p.y)**2);
+    if (d < scanR) found.push(`${other.callsign}[${other.team}] @${Math.round(d)}u`);
+  });
+  const nearMissiles = G.missiles.filter(m => Math.sqrt((m.x-p.x)**2+(m.y-p.y)**2) < scanR);
+  log(`[SCAN] 範囲${scanR}u: ${found.length}艦 ${nearMissiles.length}ミサイル検出`, myPlayer.team);
+  found.forEach(f => log(`  · ${f}`, myPlayer.team));
+}
+
+// ============================================================
+//  VICTORY
+// ============================================================
+function showVictory(team) {
+  const vs = document.getElementById('victory-screen');
+  const vt = document.getElementById('victory-title');
+  const vsub = document.getElementById('victory-sub');
+  vt.textContent = `TEAM ${team.toUpperCase()} WINS`;
+  vt.className = team;
+  vsub.textContent = `チーム ${team.toUpperCase()} が目標座標を制圧しました`;
+  vs.classList.add('show');
+}
+
+// ============================================================
+//  CANVAS INPUT
+// ============================================================
+canvas.addEventListener('mousedown', e => {
+  if (e.button === 1) { // middle click — asteroid
+    e.preventDefault();
+    if (myPlayer) placeAsteroid(mouseWorld.x, mouseWorld.y);
+    return;
+  }
+  if (e.button === 2) return; // right = toggle mode, handled below
+  dragging = true;
+  dragStart = { x: e.clientX, y: e.clientY };
+  dragOrigin = { x: vx, y: vy };
+});
+
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  mouseWorld = screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
+  document.getElementById('coords-display').textContent =
+    `X: ${Math.round(mouseWorld.x)}  Y: ${Math.round(mouseWorld.y)}`;
+
+  if (dragging && dragStart) {
+    const dx = e.clientX - dragStart.x;
+    const dy = e.clientY - dragStart.y;
+    vx = dragOrigin.x - dx / zoom;
+    vy = dragOrigin.y - dy / zoom;
+  }
+});
+
+canvas.addEventListener('mouseup', e => {
+  if (e.button === 0 && dragging) {
+    const dx = Math.abs(e.clientX - (dragStart?.x||0));
+    const dy = Math.abs(e.clientY - (dragStart?.y||0));
+    if (dx < 5 && dy < 5 && myPlayer) {
+      // Click — add waypoint or fire
+      if (mouseMode === 'missile') {
+        fireMissile(mouseWorld.x, mouseWorld.y);
+      } else {
+        addWaypoint(mouseWorld.x, mouseWorld.y);
+      }
+    }
+  }
+  dragging = false;
+});
+
+canvas.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  mouseMode = mouseMode === 'waypoint' ? 'missile' : 'waypoint';
+  const modeEl = document.getElementById('mode-display');
+  modeEl.textContent = mouseMode === 'missile' ? 'MODE: FIRE ⚠' : 'MODE: NAVIGATE';
+  modeEl.style.color = mouseMode === 'missile' ? 'var(--accent-b)' : 'var(--accent-c)';
+  notify(mouseMode === 'missile' ? 'FIRE MODE' : 'NAVIGATE MODE');
+});
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const factor = e.deltaY < 0 ? 1.12 : 0.88;
+  zoom = Math.max(0.1, Math.min(4, zoom * factor));
+}, { passive: false });
+
+// Resize
+function resizeCanvas() {
+  const wrap = document.getElementById('canvas-wrap');
+  canvas.width = wrap.clientWidth;
+  canvas.height = wrap.clientHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+function centerOn(x, y) {
+  vx = x; vy = y;
+  zoom = 0.5;
+}
+
+document.getElementById('zoom-in-btn').onclick = () => { zoom = Math.min(4, zoom * 1.3); };
+document.getElementById('zoom-out-btn').onclick = () => { zoom = Math.max(0.1, zoom * 0.77); };
+document.getElementById('zoom-reset-btn').onclick = () => { zoom = 0.25; vx = WORLD_W/2; vy = WORLD_H/2; };
+
+// ============================================================
+//  UI EVENTS
+// ============================================================
+document.getElementById('join-btn').onclick = () => {
+  if (!gameStarted) showModal(false);
+  joinGame();
+};
+
+document.getElementById('callsign-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') joinGame();
+});
+
+document.getElementById('cmd-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const val = e.target.value.trim();
+    if (val) {
+      log(`> ${val}`, 'sys');
+      processCommand(val);
+      e.target.value = '';
+    }
+  }
+});
+
+document.getElementById('help-btn').onclick = () => { showModal(true); };
+document.getElementById('modal-close-btn').onclick = () => { document.getElementById('modal-overlay').classList.remove('show'); };
+document.getElementById('modal-reset-btn').onclick = () => {
+  if (confirm('ゲームをリセットしますか？')) {
+    localStorage.removeItem(STORAGE_KEY);
+    location.reload();
+  }
+};
+
+document.getElementById('restart-btn').onclick = () => {
+  localStorage.removeItem(STORAGE_KEY);
+  location.reload();
+};
+
+document.getElementById('waypoint-list').addEventListener('click', e => {
+  const del = e.target.closest('.wp-del');
+  if (del && myPlayer) {
+    const idx = parseInt(del.dataset.idx);
+    G.players[myId].waypoints.splice(idx, 1);
+    broadcastState();
+  }
+});
+
+function showModal(forceHelp) {
+  document.getElementById('modal-overlay').classList.add('show');
+}
+
+// ============================================================
+//  LOG
+// ============================================================
+function log(msg, type = 'sys') {
+  const logEl = document.getElementById('cmd-log');
+  const entry = document.createElement('div');
+  entry.className = `log-entry ${type}`;
+  const ts = new Date().toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  entry.textContent = `[${ts}] ${msg}`;
+  logEl.appendChild(entry);
+  // Keep only last 100
+  while (logEl.children.length > 100) logEl.removeChild(logEl.firstChild);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function notify(msg) {
+  const el = document.getElementById('notification');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+// ============================================================
+//  BROADCAST CHANNEL (multi-tab sync)
+// ============================================================
+if (BC) {
+  BC.onmessage = (e) => {
+    if (e.data.type === 'state') {
+      const incoming = e.data.G;
+      if (!G || incoming.version > (G.version || 0)) {
+        G = incoming;
+        if (G.players[myId]) myPlayer = G.players[myId];
+        if (G.victory && !document.getElementById('victory-screen').classList.contains('show')) {
+          showVictory(G.victory);
+        }
+      } else if (G && incoming.version === G.version) {
+        // Merge players
+        Object.assign(G.players, incoming.players);
+        G.missiles = incoming.missiles;
+        G.particles = incoming.particles;
+        G.asteroids = incoming.asteroids;
+        G.captureCounters = incoming.captureCounters;
+        if (G.players[myId]) myPlayer = G.players[myId];
+      }
+    }
+  };
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+initStars();
+
+// Try to restore state
+const savedState = loadState();
+if (savedState) {
+  G = savedState;
+  if (G.players[myId]) {
+    myPlayer = G.players[myId];
+    gameStarted = true;
+    document.getElementById('join-btn').disabled = true;
+    document.getElementById('callsign-input').disabled = true;
+    log('[SYS] セッション復元', 'sys');
+  }
+  if (G.victory) {
+    setTimeout(() => showVictory(G.victory), 500);
+  }
+}
+
+if (!G) {
+  initFreshState();
+}
+
+// Always start loop for rendering
+if (!gameLoop) startLoop();
+
+// Initial view
+vx = WORLD_W / 2; vy = WORLD_H / 2;
+zoom = 0.22;
+
+// Show help on first visit
+if (!localStorage.getItem('void_war_visited')) {
+  localStorage.setItem('void_war_visited', '1');
+  setTimeout(() => document.getElementById('modal-overlay').classList.add('show'), 500);
+}
+
+log('[SYS] VOID WAR システム起動', 'sys');
+log('[SYS] コールサインを入力して DEPLOY SHIP をクリック', 'sys');
+log('[SYS] 複数タブで開くとマルチプレイが可能です', 'sys');
+</script>
+</body>
+</html>
